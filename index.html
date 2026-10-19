@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>آرشیو ویدیو</title>
+<style>
+  :root{
+    --bg:#0f1220; --panel:#181b2e; --text:#e8eaf6;
+    --muted:#9aa0b8; --accent:#6c8cff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Vazirmatn,Tahoma,system-ui,sans-serif;background:var(--bg);color:var(--text)}
+  header{padding:22px 20px;text-align:center;border-bottom:1px solid #2a2e48}
+  header h1{margin:0;font-size:22px}
+  header p{margin:6px 0 0;color:var(--muted);font-size:13px}
+  .wrap{max-width:1100px;margin:0 auto;padding:20px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px}
+  .card{background:var(--panel);border-radius:14px;overflow:hidden;cursor:pointer;transition:.2s;border:1px solid #262a44}
+  .card:hover{transform:translateY(-3px);border-color:var(--accent)}
+  .thumb{width:100%;aspect-ratio:16/9;object-fit:cover;display:block;background:#000}
+  .thumb-ph{width:100%;aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(135deg,#2a2e48,#1a1d30);color:var(--muted);font-size:40px}
+  .meta{padding:12px}
+  .meta h3{margin:0 0 6px;font-size:15px}
+  .meta p{margin:0;font-size:12px;color:var(--muted);line-height:1.6;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .empty{text-align:center;color:var(--muted);padding:60px 20px}
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.88);display:none;
+    align-items:center;justify-content:center;z-index:100;padding:20px}
+  .modal.open{display:flex}
+  .modal-inner{width:100%;max-width:960px;background:var(--panel);border-radius:14px;
+    overflow:hidden;position:relative}
+  .player{width:100%;aspect-ratio:16/9;background:#000}
+  .player iframe,.player video{width:100%;height:100%;border:0;display:block}
+  .modal-info{padding:16px 20px}
+  .modal-info h2{margin:0 0 8px;font-size:18px}
+  .modal-info p{margin:0;color:var(--muted);font-size:13px;line-height:1.7}
+  .close{position:absolute;top:10px;left:10px;background:rgba(0,0,0,.6);border:0;color:#fff;
+    width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:20px;z-index:2}
+</style>
+</head>
+<body>
+<header>
+  <h1>🎬 آرشیو ویدیوها</h1>
+  <p>روی هر ویدیو کلیک کنید تا پخش شود</p>
+</header>
+<div class="wrap">
+  <div id="grid" class="grid"></div>
+  <div id="status" class="empty">در حال بارگذاری…</div>
+</div>
+
+<div class="modal" id="modal">
+  <div class="modal-inner">
+    <button class="close" id="closeBtn">×</button>
+    <div class="player" id="player"></div>
+    <div class="modal-info" id="modalInfo"></div>
+  </div>
+</div>
+
+<script>
+const gridEl   = document.getElementById('grid');
+const statusEl = document.getElementById('status');
+const modal    = document.getElementById('modal');
+const playerEl = document.getElementById('player');
+const modalInfo= document.getElementById('modalInfo');
+const closeBtn = document.getElementById('closeBtn');
+
+let videos = [];
+
+function parseVideo(url){
+  url = (url || '').trim();
+  let m;
+  if (m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/|live\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/)) {
+    const id = m[1];
+    return { type:'iframe',
+             src:`https://www.youtube.com/embed/${id}?rel=0`,
+             thumb:`https://i.ytimg.com/vi/${id}/hqdefault.jpg` };
+  }
+  if (m = url.match(/vimeo\.com\/(?:video\/)?(\d+)/))
+    return { type:'iframe', src:`https://player.vimeo.com/video/${m[1]}` };
+  if (m = url.match(/aparat\.com\/v\/([a-zA-Z0-9]+)/))
+    return { type:'iframe',
+             src:`https://www.aparat.com/video/video/embed/videohash/${m[1]}/vt/frame` };
+  if (m = url.match(/dailymotion\.com\/video\/([a-zA-Z0-9]+)/))
+    return { type:'iframe', src:`https://www.dailymotion.com/embed/video/${m[1]}` };
+  if (/\.(mp4|webm|ogg)(\?|#|$)/i.test(url))
+    return { type:'video', src:url };
+  return { type:'iframe', src:url };
+}
+
+function esc(s){
+  return String(s ?? '').replace(/[&<>"']/g,
+    c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function render(){
+  gridEl.innerHTML = '';
+  if (videos.length === 0){
+    statusEl.style.display = 'block';
+    statusEl.textContent = 'هنوز ویدیویی اضافه نشده است.';
+    return;
+  }
+  statusEl.style.display = 'none';
+
+  videos.forEach((v, i) => {
+    const parsed = parseVideo(v.url);
+    const thumb  = v.thumb || parsed.thumb;
+    const card   = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      ${thumb ? `<img class="thumb" src="${thumb}" alt=""
+             onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">` : ''}
+      <div class="thumb-ph" style="display:${thumb ? 'none' : 'flex'}">▶</div>
+      <div class="meta">
+        <h3>${esc(v.title || 'بدون عنوان')}</h3>
+        ${v.description ? `<p>${esc(v.description)}</p>` : ''}
+      </div>`;
+    card.addEventListener('click', () => openVideo(i));
+    gridEl.appendChild(card);
+  });
+}
+
+function openVideo(i){
+  const v = videos[i];
+  const p = parseVideo(v.url);
+  playerEl.innerHTML = p.type === 'video'
+    ? `<video src="${p.src}" controls autoplay playsinline></video>`
+    : `<iframe src="${p.src}" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
+  modalInfo.innerHTML =
+    `<h2>${esc(v.title || '')}</h2>` +
+    (v.description ? `<p>${esc(v.description)}</p>` : '');
+  modal.classList.add('open');
+}
+
+function closeModal(){
+  modal.classList.remove('open');
+  playerEl.innerHTML = '';
+}
+
+closeBtn.addEventListener('click', closeModal);
+modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+(async () => {
+  try {
+    const res  = await fetch('videos.json?t=' + Date.now(), { cache:'no-store' });
+    if (!res.ok) throw new Error('no file');
+    const data = await res.json();
+    videos = Array.isArray(data) ? data : (data.videos || []);
+  } catch (e) {
+    videos = [];
+  }
+  render();
+})();
+</script>
+</body>
+</html>
