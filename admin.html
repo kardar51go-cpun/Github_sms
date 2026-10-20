@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>پنل مدیریت استور</title>
+<style>
+  :root{
+    --bg:#0a0d18; --panel:#141828; --panel2:#1c2136;
+    --text:#e8eaf6; --muted:#8b91aa;
+    --accent:#7c5cff; --accent2:#a78bfa;
+    --green:#3ddc97; --red:#ff5c7a; --yellow:#ffc857;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Vazirmatn,Tahoma,system-ui,sans-serif;background:var(--bg);color:var(--text);
+    background-image:radial-gradient(1000px 500px at 100% -10%,rgba(124,92,255,.12),transparent);
+    min-height:100vh;padding-bottom:60px}
+  a{color:inherit;text-decoration:none}
+  button{font-family:inherit;cursor:pointer;border:0;background:none;color:inherit;font-size:14px}
+  input,textarea,select{font-family:inherit;font-size:14px}
+
+  header{padding:18px 20px;border-bottom:1px solid rgba(255,255,255,.06);
+    display:flex;align-items:center;gap:12px;background:rgba(10,13,24,.6);
+    backdrop-filter:blur(20px);position:sticky;top:0;z-index:10}
+  .logo-icon{width:36px;height:36px;border-radius:10px;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    display:flex;align-items:center;justify-content:center;font-size:18px}
+  header h1{font-size:16px;font-weight:700}
+  header .spacer{flex:1}
+  .link-btn{padding:8px 14px;background:var(--panel2);border-radius:10px;
+    font-size:13px;transition:.2s;border:1px solid rgba(255,255,255,.06)}
+  .link-btn:hover{background:#252b45}
+
+  main{max-width:900px;margin:0 auto;padding:22px 20px;display:flex;flex-direction:column;gap:18px}
+  .panel{background:var(--panel);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:20px}
+  .panel h2{font-size:15px;margin-bottom:14px;display:flex;align-items:center;gap:8px;font-weight:700}
+  .panel h2::before{content:"";width:4px;height:16px;border-radius:2px;
+    background:linear-gradient(180deg,var(--accent),var(--accent2))}
+  .hint{color:var(--muted);font-size:12px;line-height:1.8;margin-bottom:12px}
+
+  input,textarea,select{width:100%;background:var(--panel2);border:1px solid rgba(255,255,255,.06);
+    color:var(--text);border-radius:10px;padding:11px 14px;margin-bottom:10px;outline:none;transition:.2s}
+  input:focus,textarea:focus,select:focus{border-color:var(--accent);background:#222741}
+  textarea{resize:vertical;min-height:70px}
+  input[type="checkbox"]{width:auto;margin:0 0 0 8px}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .row > *{margin-bottom:10px}
+  @media (max-width:600px){ .row{grid-template-columns:1fr} }
+
+  .check-label{display:flex;align-items:center;padding:10px 0;font-size:13px;color:var(--muted)}
+
+  /* file picker */
+  .file-picker{border:2px dashed rgba(124,92,255,.4);border-radius:12px;
+    padding:18px;text-align:center;cursor:pointer;transition:.2s;
+    background:rgba(124,92,255,.05);margin-bottom:10px}
+  .file-picker:hover{border-color:var(--accent);background:rgba(124,92,255,.1)}
+  .file-picker.has-file{border-style:solid;border-color:var(--green);
+    background:rgba(61,220,151,.08)}
+  .file-picker-icon{font-size:32px;margin-bottom:6px}
+  .file-picker-text{font-size:13px;color:var(--text);font-weight:600}
+  .file-picker-sub{font-size:11px;color:var(--muted);margin-top:4px}
+  .file-picker input{display:none}
+
+  .divider{display:flex;align-items:center;gap:12px;color:var(--muted);
+    font-size:12px;margin:8px 0}
+  .divider::before,.divider::after{content:"";flex:1;height:1px;
+    background:rgba(255,255,255,.08)}
+
+  button.primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;
+    padding:11px 20px;border-radius:10px;font-weight:600;transition:.2s}
+  button.primary:hover:not(:disabled){filter:brightness(1.15)}
+  button.secondary{background:var(--panel2);color:var(--text);padding:11px 20px;
+    border-radius:10px;border:1px solid rgba(255,255,255,.06);transition:.2s}
+  button.secondary:hover{background:#252b45}
+  button.danger{background:transparent;color:var(--red);padding:8px 12px;border-radius:8px;font-size:13px}
+  button.danger:hover{background:rgba(255,92,122,.1)}
+  button.small{padding:7px 11px;font-size:13px;background:var(--panel2);
+    border-radius:8px;border:1px solid rgba(255,255,255,.06)}
+  button.small:hover{background:#252b45}
+  button:disabled{opacity:.4;cursor:not-allowed}
+
+  .status{margin-top:10px;font-size:13px;padding:10px 14px;border-radius:10px;display:none}
+  .status.ok{display:block;background:rgba(61,220,151,.1);color:var(--green);border:1px solid rgba(61,220,151,.2)}
+  .status.err{display:block;background:rgba(255,92,122,.1);color:var(--red);border:1px solid rgba(255,92,122,.2)}
+  .status.info{display:block;background:rgba(124,92,255,.1);color:var(--accent2);border:1px solid rgba(124,92,255,.2)}
+
+  .item{display:flex;align-items:center;gap:12px;background:var(--panel2);
+    padding:12px;border-radius:12px;margin-bottom:8px;border:1px solid rgba(255,255,255,.04)}
+  .item-icon{width:44px;height:44px;border-radius:10px;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+    font-weight:800;color:#fff;font-size:16px;overflow:hidden}
+  .item-icon img{width:100%;height:100%;object-fit:cover}
+  .item-info{flex:1;min-width:0}
+  .item-info strong{display:block;font-size:14px;margin-bottom:3px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .item-info small{color:var(--muted);font-size:11px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+  .item-actions{display:flex;gap:4px;flex-shrink:0}
+  .badge{display:inline-block;background:rgba(124,92,255,.15);color:var(--accent2);
+    padding:2px 7px;border-radius:5px;font-size:10px;margin-right:6px;font-weight:600}
+  .badge-file{display:inline-block;background:rgba(61,220,151,.15);color:var(--green);
+    padding:2px 7px;border-radius:5px;font-size:10px;margin-right:6px;font-weight:600}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-icon">🛠️</div>
+  <h1>پنل مدیریت استور</h1>
+  <div class="spacer"></div>
+  <a class="link-btn" href="index.html" target="_blank">👁️ پیش‌نمایش فروشگاه</a>
+</header>
+
+<main>
+  <!-- کارت توکن -->
+  <section class="panel">
+    <h2>🔐 ورود با توکن GitHub</h2>
+    <p class="hint">
+      توکن را بساز: GitHub → Settings → Developer settings → 
+      <b>Fine-grained tokens</b> → دسترسی <b>Contents: Read & Write</b> روی مخزن 
+      <b>Github_sms</b>. توکن فقط در مرورگر خودت ذخیره می‌شود.
+    </p>
+    <input id="token" type="password" placeholder="github_pat_…  یا  ghp_…">
+    <div class="row">
+      <button id="loadBtn" class="secondary">📥 بارگذاری از GitHub</button>
+      <button id="saveBtn" class="primary">☁️ ذخیره در GitHub</button>
+    </div>
+    <div id="ghStatus" class="status"></div>
+  </section>
+
+  <!-- فرم افزودن/ویرایش -->
+  <section class="panel">
+    <h2 id="formTitle">➕ افزودن اپ / بازی جدید</h2>
+    <input id="vTitle" placeholder="عنوان * (مثلاً: بازی مار)">
+    
+    <!-- فایل HTML -->
+    <label class="file-picker" id="filePicker">
+      <input type="file" id="vFile" accept=".html,.htm">
+      <div class="file-picker-icon">📄</div>
+      <div class="file-picker-text" id="filePickerText">آپلود فایل HTML</div>
+      <div class="file-picker-sub" id="filePickerSub">فایل روی مخزن GitHub ذخیره می‌شود</div>
+    </label>
+
+    <div class="divider">یا</div>
+
+    <input id="vUrl" placeholder="لینک اپ یا بازی HTML (اگر فایل آپلود کردی، خالی بگذار)">
+
+    <input id="vIcon" placeholder="لینک آیکون (اختیاری)">
+    <div class="row">
+      <input id="vCategory" placeholder="دسته‌بندی (بازی، ابزار…)">
+      <input id="vRating" type="number" step="0.1" min="0" max="5" placeholder="امتیاز (۰ تا ۵)">
+    </div>
+    <textarea id="vDesc" placeholder="توضیحات (اختیاری)"></textarea>
+    <label class="check-label">
+      <input type="checkbox" id="vFeatured">
+      نمایش در بخش «⭐ ویژه»
+    </label>
+    <div class="row" style="margin-top:8px">
+      <button id="addBtn" class="primary">افزودن به لیست</button>
+      <button id="cancelBtn" class="secondary" style="display:none">انصراف</button>
+    </div>
+    <div id="formStatus" class="status"></div>
+  </section>
+
+  <!-- لیست -->
+  <section class="panel">
+    <h2>📋 لیست اپ‌ها</h2>
+    <div id="list"></div>
+    <div class="row" style="margin-top:12px">
+      <button id="downloadBtn" class="secondary">💾 دانلود apps.json</button>
+      <button id="importBtn" class="secondary">📂 بارگذاری فایل JSON</button>
+      <input id="importFile" type="file" accept=".json" hidden>
+    </div>
+  </section>
+</main>
+
+<script>
+/* ═══════════════════════════════════════════════════════
+   ✅ تنظیمات مخزن تو
+   ═══════════════════════════════════════════════════════ */
+const GITHUB_CONFIG = {
+  owner:  'kardar51go-cpun',
+  repo:   'Github_sms',
+  branch: 'main',
+  path:   'apps.json'
+};
+/* ═══════════════════════════════════════════════════════ */
+
+const $ = id => document.getElementById(id);
+const TOKEN_KEY = 'store-admin-token';
+const APPS_FOLDER = 'apps';   // پوشه‌ای که فایل‌های HTML در آن ذخیره می‌شوند
+
+let apps = [];
+let ghSha = null;
+let editingIndex = -1;
+let selectedFile = null;
+
+/* ---------- helpers ---------- */
+function esc(s){
+  return String(s ?? '').replace(/[&<>"']/g,
+    c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function b64enc(str){
+  const bytes = new TextEncoder().encode(str);
+  let bin = ''; for (const b of bytes) bin += String.fromCharCode(b);
+  return btoa(bin);
+}
+function b64dec(b64){
+  const bin = atob(b64.replace(/\s/g, ''));
+  const bytes = Uint8Array.from(bin, c => c.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
+}
+function colorFor(str){
+  const colors = [
+    'linear-gradient(135deg,#7c5cff,#a78bfa)',
+    'linear-gradient(135deg,#ff6b6b,#ff8e53)',
+    'linear-gradient(135deg,#3ddc97,#38bdf8)',
+    'linear-gradient(135deg,#fbbf24,#f97316)',
+    'linear-gradient(135deg,#ec4899,#a855f7)',
+    'linear-gradient(135deg,#06b6d4,#3b82f6)',
+  ];
+  let h = 0; for (const c of (str || '')) h = (h * 31 + c.charCodeAt(0)) | 0;
+  return colors[Math.abs(h) % colors.length];
+}
+function iconHTML(app, size = 44){
+  const style = `width:${size}px;height:${size}px;border-radius:10px;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+    font-weight:800;color:#fff;font-size:${Math.round(size*0.4)}px;overflow:hidden;
+    background:${colorFor(app.title)}`;
+  if (app.icon){
+    return `<div class="item-icon" style="${style}">
+      <img src="${esc(app.icon)}" alt="" onerror="this.parentNode.innerHTML='${esc((app.title||'?')[0])}'">
+    </div>`;
+  }
+  return `<div class="item-icon" style="${style}">${esc((app.title||'?')[0])}</div>`;
+}
+function setStatus(id, msg, kind = ''){
+  const el = $(id);
+  el.className = 'status ' + kind;
+  el.textContent = msg;
+}
+function clearStatus(id){
+  const el = $(id);
+  el.className = 'status';
+  el.textContent = '';
+}
+
+/* ---------- filename helpers ---------- */
+function sanitizeSlug(title){
+  let slug = (title || 'app').toLowerCase()
+    .replace(/[^a-z0-9-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .substring(0, 30);
+  if (!slug) slug = 'app';
+  return slug;
+}
+function makeUniqueFilename(title){
+  const slug = sanitizeSlug(title);
+  const ts = Date.now().toString(36);
+  return `${APPS_FOLDER}/${slug}-${ts}.html`;
+}
+function isLocalFile(url){
+  if (!url) return false;
+  try {
+    return url.includes(`/${GITHUB_CONFIG.repo}/${APPS_FOLDER}/`);
+  } catch(e){ return false; }
+}
+function extractExistingPath(url){
+  if (!url) return null;
+  const m = url.match(new RegExp(`/${GITHUB_CONFIG.repo}/(${APPS_FOLDER}/[^/?#]+\\.html?)`));
+  return m ? m[1] : null;
+}
+function pagesUrlFor(path){
+  return `https://${GITHUB_CONFIG.owner}.github.io/${GITHUB_CONFIG.repo}/${path}`;
+}
+
+/* ---------- file → base64 ---------- */
+function fileToBase64(file){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result;
+      resolve(dataUrl.split(',')[1]);
+    };
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
+/* ---------- GitHub API ---------- */
+function contentsUrl(path){
+  return `https://api.github.com/repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/contents/${path}`;
+}
+
+async function ghGetFile(token, path){
+  const res = await fetch(`${contentsUrl(path)}?ref=${encodeURIComponent(GITHUB_CONFIG.branch)}`, {
+    headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github+json' }
+  });
+  if (res.status === 404) return null;
+  if (!res.ok){
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || `HTTP ${res.status}`);
+  }
+  return res.json();
+}
+
+async function ghUploadFile(token, path, base64Content, message){
+  const existing = await ghGetFile(token, path);
+  const body = {
+    message: message || `Upload ${path}`,
+    content: base64Content,
+    branch: GITHUB_CONFIG.branch
+  };
+  if (existing && existing.sha) body.sha = existing.sha;
+
+  const res = await fetch(contentsUrl(path), {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Accept': 'application/vnd.github+json',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok){
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || `HTTP ${res.status}`);
+  }
+  return res.json();
+}
+
+async function ghLoad(){
+  const token = $('token').value.trim();
+  if (!token){ setStatus('ghStatus', 'توکن را وارد کن', 'err'); return; }
+  localStorage.setItem(TOKEN_KEY, token);
+  setStatus('ghStatus', 'در حال بارگذاری…', 'info');
+  try{
+    const data = await ghGetFile(token, GITHUB_CONFIG.path);
+    if (!data){
+      ghSha = null;
+      setStatus('ghStatus', 'فایل apps.json وجود ندارد — با «ذخیره در GitHub» ساخته می‌شود.', 'ok');
+      return;
+    }
+    ghSha = data.sha;
+    const parsed = JSON.parse(b64dec(data.content));
+    apps = Array.isArray(parsed) ? parsed : (parsed.apps || []);
+    render();
+    setStatus('ghStatus', `✅ ${apps.length} اپ بارگذاری شد.`, 'ok');
+  }catch(e){
+    setStatus('ghStatus', 'خطا: ' + e.message, 'err');
+  }
+}
+
+async function ghSave(){
+  const token = $('token').value.trim();
+  if (!token){ setStatus('ghStatus', 'توکن را وارد کن', 'err'); return; }
+  localStorage.setItem(TOKEN_KEY, token);
+  setStatus('ghStatus', 'در حال ذخیره…', 'info');
+  try{
+    const body = {
+      message: `Update ${GITHUB_CONFIG.path} via admin panel`,
+      content: b64enc(JSON.stringify(apps, null, 2)),
+      branch: GITHUB_CONFIG.branch
+    };
+    if (ghSha) body.sha = ghSha;
+
+    const res = await fetch(contentsUrl(GITHUB_CONFIG.path), {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/vnd.github+json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(body)
+    });
+    if (!res.ok){
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || `HTTP ${res.status}`);
+    }
+    const data = await res.json();
+    ghSha = data.content.sha;
+    setStatus('ghStatus', '✅ ذخیره شد! چند دقیقه بعد در سایت اعمال می‌شود.', 'ok');
+  }catch(e){
+    setStatus('ghStatus', 'خطا: ' + e.message, 'err');
+  }
+}
+
+/* ---------- file picker UI ---------- */
+$('filePicker').addEventListener('click', e => {
+  if (e.target.tagName !== 'INPUT') $('vFile').click();
+});
+$('vFile').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (file){
+    selectedFile = file;
+    $('filePicker').classList.add('has-file');
+    $('filePickerText').textContent = `✅ ${file.name}`;
+    $('filePickerSub').textContent = `${(file.size / 1024).toFixed(1)} KB — برای تغییر کلیک کن`;
+    $('vUrl').value = '';
+    $('vUrl').placeholder = 'لینک نادیده گرفته می‌شود (فایل انتخاب شده)';
+  } else {
+    clearFileSelection();
+  }
+});
+function clearFileSelection(){
+  selectedFile = null;
+  $('vFile').value = '';
+  $('filePicker').classList.remove('has-file');
+  $('filePickerText').textContent = 'آپلود فایل HTML';
+  $('filePickerSub').textContent = 'فایل روی مخزن GitHub ذخیره می‌شود';
+  $('vUrl').placeholder = 'لینک اپ یا بازی HTML (اگر فایل آپلود کردی، خالی بگذار)';
+}
+
+/* ---------- render list ---------- */
+function render(){
+  const listEl = $('list');
+  if (apps.length === 0){
+    listEl.innerHTML = '<p class="hint" style="text-align:center;padding:20px">لیست خالی است. اولین اپ را اضافه کن.</p>';
+    return;
+  }
+  listEl.innerHTML = '';
+  apps.forEach((a, i) => {
+    const local = isLocalFile(a.url);
+    const item = document.createElement('div');
+    item.className = 'item';
+    item.innerHTML = `
+      ${iconHTML(a)}
+      <div class="item-info">
+        <strong>
+          ${esc(a.title || 'بدون عنوان')}
+          ${a.featured ? '<span class="badge">ویژه</span>' : ''}
+          ${local ? '<span class="badge-file">📁 فایل</span>' : ''}
+        </strong>
+        <small>${esc(a.category || '—')} • ${esc(local ? 'آپلود شده در مخزن' : (a.url || ''))}</small>
+      </div>
+      <div class="item-actions">
+        <button class="small" data-act="up" ${i===0?'disabled':''}>↑</button>
+        <button class="small" data-act="down" ${i===apps.length-1?'disabled':''}>↓</button>
+        <button class="small" data-act="edit">✏️</button>
+        <button class="danger" data-act="del">🗑️</button>
+      </div>`;
+    item.querySelector('[data-act="up"]').onclick   = () => { if(i>0){[apps[i-1],apps[i]]=[apps[i],apps[i-1]];render();} };
+    item.querySelector('[data-act="down"]').onclick = () => { if(i<apps.length-1){[apps[i+1],apps[i]]=[apps[i],apps[i+1]];render();} };
+    item.querySelector('[data-act="edit"]').onclick = () => editApp(i);
+    item.querySelector('[data-act="del"]').onclick  = () => {
+      if (confirm(`«${a.title}» حذف شود؟`)) { apps.splice(i, 1); render(); }
+    };
+    listEl.appendChild(item);
+  });
+}
+
+/* ---------- add / edit ---------- */
+function resetForm(){
+  $('vTitle').value = ''; $('vUrl').value = ''; $('vIcon').value = '';
+  $('vCategory').value = ''; $('vRating').value = ''; $('vDesc').value = '';
+  $('vFeatured').checked = false;
+  clearFileSelection();
+  editingIndex = -1;
+  $('formTitle').textContent = '➕ افزودن اپ / بازی جدید';
+  $('addBtn').textContent = 'افزودن به لیست';
+  $('cancelBtn').style.display = 'none';
+  clearStatus('formStatus');
+}
+
+function editApp(i){
+  const a = apps[i];
+  $('vTitle').value = a.title || '';
+  $('vUrl').value = a.url || '';
+  $('vIcon').value = a.icon || '';
+  $('vCategory').value = a.category || '';
+  $('vRating').value = a.rating || '';
+  $('vDesc').value = a.description || '';
+  $('vFeatured').checked = !!a.featured;
+  clearFileSelection();
+  // پر کردن placeholder با آدرس فعلی برای فایل‌های محلی
+  if (isLocalFile(a.url)){
+    $('vUrl').placeholder = '📍 فایل فعلی — برای جایگزینی، فایل جدید انتخاب کن';
+  }
+  editingIndex = i;
+  $('formTitle').textContent = '✏️ ویرایش اپ';
+  $('addBtn').textContent = '💾 ذخیره تغییرات';
+  $('cancelBtn').style.display = 'block';
+  $('vTitle').focus();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+$('addBtn').onclick = async () => {
+  const title = $('vTitle').value.trim();
+  let url = $('vUrl').value.trim();
+
+  if (!title) return alert('عنوان الزامی است');
+  if (!url && !selectedFile) return alert('یا لینک بده یا فایل HTML آپلود کن');
+
+  // اگر فایل انتخاب شده، اول آپلود کن
+  if (selectedFile){
+    const token = $('token').value.trim();
+    if (!token){
+      setStatus('formStatus', '❌ برای آپلود فایل، ابتدا توکن را در بالای صفحه وارد کن', 'err');
+      return;
+    }
+
+    if (selectedFile.size > 900 * 1024){
+      if (!confirm(`حجم فایل ${(selectedFile.size/1024/1024).toFixed(1)} مگابایت است. GitHub API محدودیت ~۱ مگابایت دارد. ادامه بدهی؟`)) return;
+    }
+
+    $('addBtn').disabled = true;
+    const originalText = $('addBtn').textContent;
+    $('addBtn').textContent = '⏳ در حال آپلود فایل…';
+    setStatus('formStatus', '⏳ در حال آپلود فایل HTML به GitHub…', 'info');
+
+    try {
+      // اگر در حال ویرایش یک فایل محلی هستیم، همان مسیر را بازنویسی کن
+      let uploadPath = null;
+      if (editingIndex >= 0){
+        uploadPath = extractExistingPath(apps[editingIndex].url);
+      }
+      if (!uploadPath){
+        uploadPath = makeUniqueFilename(title);
+      }
+
+      const base64 = await fileToBase64(selectedFile);
+      await ghUploadFile(token, uploadPath, base64, `Upload app: ${title}`);
+      url = pagesUrlFor(uploadPath);
+
+      setStatus('formStatus', '✅ فایل آپلود شد!', 'ok');
+    } catch(e){
+      $('addBtn').disabled = false;
+      $('addBtn').textContent = originalText;
+      setStatus('formStatus', '❌ خطا در آپلود فایل: ' + e.message, 'err');
+      return;
+    }
+
+    $('addBtn').disabled = false;
+    $('addBtn').textContent = originalText;
+  }
+
+  const obj = { title, url };
+  const icon = $('vIcon').value.trim();
+  const category = $('vCategory').value.trim();
+  const rating = $('vRating').value.trim();
+  const description = $('vDesc').value.trim();
+  const featured = $('vFeatured').checked;
+
+  if (icon)        obj.icon = icon;
+  if (category)    obj.category = category;
+  if (rating)      obj.rating = parseFloat(rating);
+  if (description) obj.description = description;
+  if (featured)    obj.featured = true;
+
+  if (editingIndex >= 0) apps[editingIndex] = obj;
+  else apps.push(obj);
+
+  resetForm();
+  render();
+};
+
+$('cancelBtn').onclick = resetForm;
+
+/* ---------- export / import ---------- */
+$('downloadBtn').onclick = () => {
+  const blob = new Blob([JSON.stringify(apps, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'apps.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+};
+
+$('importBtn').onclick = () => $('importFile').click();
+$('importFile').onchange = e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    try{
+      const data = JSON.parse(ev.target.result);
+      apps = Array.isArray(data) ? data : (data.apps || []);
+      render();
+      setStatus('ghStatus', 'فایل بارگذاری شد (هنوز در GitHub ذخیره نشده).', 'ok');
+    }catch(err){ alert('فایل JSON معتبر نیست'); }
+    e.target.value = '';
+  };
+  r.readAsText(file);
+};
+
+/* ---------- wire buttons ---------- */
+$('loadBtn').onclick = ghLoad;
+$('saveBtn').onclick = ghSave;
+
+/* ---------- init ---------- */
+(async function init(){
+  const saved = localStorage.getItem(TOKEN_KEY);
+  if (saved) $('token').value = saved;
+
+  try {
+    const res = await fetch(GITHUB_CONFIG.path + '?t=' + Date.now(), { cache: 'no-store' });
+    if (res.ok){
+      const data = await res.json();
+      apps = Array.isArray(data) ? data : (data.apps || []);
+    }
+  } catch(e){}
+  render();
+})();
+</script>
+</body>
+</html>
