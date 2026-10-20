@@ -1,25 +1,9 @@
 [
   {
-    "title": "بازی ۲۰۴۸",
-    "url": "https://play2048.co/",
+    "title": "مینی دراگون کرفت",
+    "url": "https://kardar51go-cpun.github.io/Github_sms/apps/app-mvh35h1b.html",
+    "icon": "https://uploadkon.ir/uploads/5c0b20_26IMG-20261020-230709-615.jpg",
     "category": "بازی",
-    "rating": 4.5,
-    "featured": true,
-    "description": "بازی معروف ۲۰۴۸ — اعداد را با کلیدهای جهت‌دار ترکیب کن تا به ۲۰۴۸ برسی."
-  },
-  {
-    "title": "ماشین‌حساب",
-    "url": "https://calculator.net/",
-    "category": "ابزار",
-    "rating": 4.0,
-    "description": "ماشین‌حساب ساده و پیشرفته آنلاین"
-  },
-  {
-    "title": "بازی Flappy Bird",
-    "url": "https://flappybird.io/",
-    "category": "بازی",
-    "rating": 4.8,
-    "featured": true,
-    "description": "بازی پرنده‌ای که همه رو معتاد کرد!"
+    "rating": 5
   }
 ]
